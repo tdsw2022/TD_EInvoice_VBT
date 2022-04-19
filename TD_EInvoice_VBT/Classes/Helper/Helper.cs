@@ -231,7 +231,7 @@ namespace TD_EInvoice_VBT.Classes.Helper
                 var requestBody = JsonConvert.SerializeObject(invoiceHeader);
                 StringContent postBody = new StringContent(requestBody, Encoding.UTF8, "application/json");
                 var responseVBT = client.PostAsync(ConfigurationSettings.AppSettings["URL_AddEInvoice"], postBody).Result;
-                string responseData = await responseVBT.Content.ReadAsStringAsync();                
+                string responseData = await responseVBT.Content.ReadAsStringAsync();       
 
                 //AddOutgoingDespatchAdviceResponse adviceResponse = JsonConvert.DeserializeObject<AddOutgoingDespatchAdviceResponse>(responseData);
             }
