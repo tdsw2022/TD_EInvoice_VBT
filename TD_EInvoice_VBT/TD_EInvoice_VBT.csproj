@@ -83,6 +83,7 @@
     <Compile Include="Classes\Models\Account.cs" />
     <Compile Include="Classes\Models\Address.cs" />
     <Compile Include="Classes\Models\AirTransport.cs" />
+    <Compile Include="Classes\Models\AliasResponse.cs" />
     <Compile Include="Classes\Models\AllowanceCharge.cs" />
     <Compile Include="Classes\Models\Attachment.cs" />
     <Compile Include="Classes\Models\Barcode.cs" />
@@ -102,6 +103,7 @@
     <Compile Include="Classes\Models\Despatch.cs" />
     <Compile Include="Classes\Models\Dimension.cs" />
     <Compile Include="Classes\Models\DocumentReference.cs" />
+    <Compile Include="Classes\Models\DocumentResponse.cs" />
     <Compile Include="Classes\Models\ExchangeRate.cs" />
     <Compile Include="Classes\Models\FinancialAccount.cs" />
     <Compile Include="Classes\Models\GoodsItem.cs" />
@@ -143,6 +145,7 @@
     <Compile Include="Classes\Models\Stowage.cs" />
     <Compile Include="Classes\Models\SupplierParty.cs" />
     <Compile Include="Classes\Models\TaxCategory.cs" />
+    <Compile Include="Classes\Models\Taxpayer.cs" />
     <Compile Include="Classes\Models\TaxScheme.cs" />
     <Compile Include="Classes\Models\TaxSubtotal.cs" />
     <Compile Include="Classes\Models\TaxTotal.cs" />
@@ -150,6 +153,8 @@
     <Compile Include="Classes\Models\TransportEquipment.cs" />
     <Compile Include="Classes\Models\TransportHandlingUnit.cs" />
     <Compile Include="Classes\Models\TransportMeans.cs" />
+    <Compile Include="Classes\Models\UserData.cs" />
+    <Compile Include="Classes\Models\UserResponse.cs" />
     <Compile Include="EInvoice.asmx.cs">
       <DependentUpon>EInvoice.asmx</DependentUpon>
       <SubType>Component</SubType>

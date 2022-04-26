@@ -10,6 +10,8 @@ using System.Text;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Net.Http.Headers;
+using Microsoft.Dynamics.BusinessConnectorNet;
+using System.Data;
 
 namespace TD_EInvoice_VBT
 {
@@ -26,11 +28,11 @@ namespace TD_EInvoice_VBT
 
 
         [WebMethod]
-        [Obsolete]
         public string AddEInvoice(Int64 axRecId, Int16 eInvoiceType)
         {
-            axRecId = 5637589351;
-            axRecId = 5637591075;
+            //axRecId = 5637589351;
+            axRecId = 5637543825;
+            //axRecId = 5637591075;
             eInvoiceType = 1;
             Helper     helper = new Helper();
             HttpClient client = new HttpClient();
@@ -42,15 +44,19 @@ namespace TD_EInvoice_VBT
         }
 
         [WebMethod]
-        public void getIncomingEInvoice()
+        public void GetIncomingEInvoice()
         {
             new Helper().incomingEInvoice();
         }
 
         [WebMethod]
-        public async Task<bool> AxConnection()
+        public DataTable CheckGibInvoiceUser(string user)
         {
-            return true;
+            DataTable userDt;
+            Helper helper = new Helper();
+            helper.CheckGibInvoiceUser(user);
+            userDt = helper.dt;
+            return userDt;
         }
     }
 }

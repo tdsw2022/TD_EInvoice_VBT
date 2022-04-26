@@ -10,30 +10,32 @@ using System.Web;
 using TD_EInvoice_VBT.Classes.Models;
 using Microsoft.Dynamics.BusinessConnectorNet;
 using System.Net.Http.Headers;
+using System.Data;
 
 namespace TD_EInvoice_VBT.Classes.Helper
 {
     public class Helper
     {
-        [Obsolete]
+        public DataTable dt;
+        
         public async Task<Account> getToken()
         {
-            Account account = new Account { Email = ConfigurationSettings.AppSettings["UserId"], Password = ConfigurationSettings.AppSettings["Password"] };
+            Account account = new Account { Email = ConfigurationManager.AppSettings["UserId"], Password = ConfigurationManager.AppSettings["Password"] };
             try
             {
-                HttpClient client = new HttpClient();                
+                HttpClient client = new HttpClient();
 
                 string userJsonData = JsonConvert.SerializeObject(account);
                 var convertHttpContent = new StringContent(userJsonData, Encoding.UTF8, "application/json");
 
-                var responseVBT = client.PostAsync(ConfigurationSettings.AppSettings["URL_Account"], convertHttpContent).Result;
+                var responseVBT = client.PostAsync(ConfigurationManager.AppSettings["URL_Account"], convertHttpContent).Result;
 
                 string responseToken = await responseVBT.Content.ReadAsStringAsync();
 
                 account = JsonConvert.DeserializeObject<Account>(responseToken);
                 account.Message = "";
             }
-            catch(Exception Ex)
+            catch (Exception Ex)
             {
                 account.Message = Ex.Message;
                 return account;
@@ -41,7 +43,6 @@ namespace TD_EInvoice_VBT.Classes.Helper
             return account;
         }
 
-        [Obsolete]
         public Axapta AxaptaConnection()
         {
             Axapta result = default;
@@ -49,29 +50,28 @@ namespace TD_EInvoice_VBT.Classes.Helper
             {
                 result = new Axapta();
 
-                result.LogonAs(ConfigurationSettings.AppSettings["AxUserName"],
-                               ConfigurationSettings.AppSettings["AxDomain"],
-                               new System.Net.NetworkCredential(ConfigurationSettings.AppSettings["AxUserName"],
-                                                                ConfigurationSettings.AppSettings["AxPassword"],
-                                                                ConfigurationSettings.AppSettings["AxDomain"]),
-                               ConfigurationSettings.AppSettings["AxCompany"],
+                result.LogonAs(ConfigurationManager.AppSettings["AxUserName"],
+                               ConfigurationManager.AppSettings["AxDomain"],
+                               new System.Net.NetworkCredential(ConfigurationManager.AppSettings["AxUserName"],
+                                                                ConfigurationManager.AppSettings["AxPassword"],
+                                                                ConfigurationManager.AppSettings["AxDomain"]),
+                               ConfigurationManager.AppSettings["AxCompany"],
                                "TR",
-                               ConfigurationSettings.AppSettings["AxServer"] + ":" + ConfigurationSettings.AppSettings["AxPort"],
+                               ConfigurationManager.AppSettings["AxServer"] + ":" + ConfigurationManager.AppSettings["AxPort"],
                                null);
             }
-            catch 
+            catch
             {
                 return null;
             }
             return result;
         }
 
-        [Obsolete]
         public async Task<string> initEInvoiceSalesData(Int64 axRecId, Int16 eInvoiceType)
         {
-            Axapta     axapta = AxaptaConnection();
-            Account    account = await getToken();
-            if(account.Message != "")
+            Axapta axapta = AxaptaConnection();
+            Account account = await getToken();
+            if (account.Message != "")
                 return "VBT Token bilgileri getirilemedi!";
             if (axapta == null)
                 return "Axapta Bağlantısı Kurulamadı!";
@@ -117,9 +117,9 @@ namespace TD_EInvoice_VBT.Classes.Helper
                     CategoryId = 0,
                     IdentityOrTaxNumber = "11111111111",
                     LegalOrPerson = "G",
-                    EArchiveMailTo = ""                    
+                    EArchiveMailTo = ""
                 };
-                CustomerParty customer = new CustomerParty { Party = customerParty , DeliveryContact = null };
+                CustomerParty customer = new CustomerParty { Party = customerParty, DeliveryContact = null };
                 List<InvoiceLine> listInvoiceLine = new List<InvoiceLine>();
                 List<TaxSubtotal> taxsubTotal = new List<TaxSubtotal>();
                 for (int axCon = 1; axCon <= axConSalesInvoiceLines.Count; axCon++)
@@ -140,19 +140,19 @@ namespace TD_EInvoice_VBT.Classes.Helper
                     InvoiceLine invoiceLine = new InvoiceLine
                     {
                         Id = Convert.ToString(lines.get_Item(3)),
-                         Item = new Item { Name = (string)lines.get_Item(4) },
-                         InvoicedQuantity = new Quantity { Value = (double)lines.get_Item(6), Unitcode = "NIU" }, 
-                         TaxTotal = new TaxTotal // sorulacak
-                         { 
-                             TaxAmount = (double)lines.get_Item(11),
-                             TaxSubtotal = taxsubTotal
-                         },
-                         AllowanceCharge = null,
-                         Delivery = null,
-                         LineExtensionAmount = (double)lines.get_Item(12),
-                         Price = (double)lines.get_Item(7)
+                        Item = new Item { Name = (string)lines.get_Item(4) },
+                        InvoicedQuantity = new Quantity { Value = (double)lines.get_Item(6), Unitcode = "NIU" },
+                        TaxTotal = new TaxTotal // sorulacak
+                        {
+                            TaxAmount = (double)lines.get_Item(11),
+                            TaxSubtotal = taxsubTotal
+                        },
+                        AllowanceCharge = null,
+                        Delivery = null,
+                        LineExtensionAmount = (double)lines.get_Item(12),
+                        Price = (double)lines.get_Item(7)
                     };
-                    
+
                     listInvoiceLine.Add(invoiceLine);
                 }
 
@@ -162,6 +162,7 @@ namespace TD_EInvoice_VBT.Classes.Helper
                     TaxSubtotal = taxsubTotal
                 };
                 taxHeaderList.Add(taxHeader);
+                MonetaryTotal monetaryTotal = new MonetaryTotal { LineExtensionAmount = 1, TaxExclusiveAmount = 1, TaxInclusiveAmount = 1.18, AllowanceTotalAmount = 0, ChargeTotalAmount = 0, PayableAmount = 1.18 };
                 OutgoingInvoice invoiceHeader = new OutgoingInvoice
                 {
                     LocationCode = (string)axConSalesInvoiceHeader.get_Item(34),
@@ -169,7 +170,7 @@ namespace TD_EInvoice_VBT.Classes.Helper
                     //FirmBranchCode = "",
                     //TryCountDescription = "",
                     //TryCount = 0,
-                    EArchiveMailTo = (string)axConSalesInvoiceHeader.get_Item(33), 
+                    EArchiveMailTo = (string)axConSalesInvoiceHeader.get_Item(33),
                     //PutInvoiceNumberIntoQrCode = false,
                     //MailTo = "",
                     ReceiverIdentifier = "", // sorulacak
@@ -194,7 +195,7 @@ namespace TD_EInvoice_VBT.Classes.Helper
                     AllowanceCharge = null,
                     TaxTotal = taxHeaderList,
                     WithholdingTaxTotal = null,//new List<TaxTotal>(),//taxHeaderList,
-                    LegalMonetaryTotal = null,
+                    LegalMonetaryTotal = monetaryTotal,
                     InvoiceLine = listInvoiceLine,
                     //AccountingCost = "",
                     //TaxCurrencyCode = "",
@@ -216,7 +217,7 @@ namespace TD_EInvoice_VBT.Classes.Helper
                     //PaymentMeans = null,
                     //PaymentTerms = null,
                     //TaxExchangeRate = null,
-                    PricingExchangeRate = new ExchangeRate { SourceCurrencyCode = (string)axConSalesInvoiceHeader.get_Item(36), TargetCurrencyCode = "TRY", CalculationRate = (double)axConSalesInvoiceHeader.get_Item(35), Date  = Convert.ToDateTime(axConSalesInvoiceHeader.get_Item(4)) },
+                    PricingExchangeRate = new ExchangeRate { SourceCurrencyCode = (string)axConSalesInvoiceHeader.get_Item(36), TargetCurrencyCode = "TRY", CalculationRate = (double)axConSalesInvoiceHeader.get_Item(35), Date = Convert.ToDateTime(axConSalesInvoiceHeader.get_Item(4)) },
                     //PaymentExchangeRate = null,
                     //PaymentAlternativeExchangeRate = null,
                     InternetPayment = null,
@@ -230,8 +231,8 @@ namespace TD_EInvoice_VBT.Classes.Helper
 
                 var requestBody = JsonConvert.SerializeObject(invoiceHeader);
                 StringContent postBody = new StringContent(requestBody, Encoding.UTF8, "application/json");
-                var responseVBT = client.PostAsync(ConfigurationSettings.AppSettings["URL_AddEInvoice"], postBody).Result;
-                string responseData = await responseVBT.Content.ReadAsStringAsync();       
+                var responseVBT = client.PostAsync(ConfigurationManager.AppSettings["URL_AddEInvoice"], postBody).Result;
+                string responseData = await responseVBT.Content.ReadAsStringAsync();
 
                 //AddOutgoingDespatchAdviceResponse adviceResponse = JsonConvert.DeserializeObject<AddOutgoingDespatchAdviceResponse>(responseData);
             }
@@ -244,7 +245,6 @@ namespace TD_EInvoice_VBT.Classes.Helper
             return "";
         }
 
-        [Obsolete]
         public async Task<string> incomingEInvoice()
         {
             try
@@ -267,14 +267,14 @@ namespace TD_EInvoice_VBT.Classes.Helper
 
                 var requestBody = JsonConvert.SerializeObject(incomingEInvoice);
                 StringContent postBody = new StringContent(requestBody, Encoding.UTF8, "application/json");
-                var responseVBT = client.PostAsync(ConfigurationSettings.AppSettings["URL_GetIncomingEInvoice"], postBody).Result;
+                var responseVBT = client.PostAsync(ConfigurationManager.AppSettings["URL_GetIncomingEInvoice"], postBody).Result;
                 string responseData = await responseVBT.Content.ReadAsStringAsync();
 
                 IncomingInvoiceResponse response = JsonConvert.DeserializeObject<IncomingInvoiceResponse>(responseData);
 
-                if (response.ErrorCode != "") 
-                    return response.Message; 
-                else 
+                if (response.ErrorCode != "")
+                    return response.Message;
+                else
                     return "Aktarım tamamlandı";
             }
             catch
@@ -283,6 +283,59 @@ namespace TD_EInvoice_VBT.Classes.Helper
             }
             return "Aktarım tamamlanmadı";
         }
+
+        public async void CheckGibInvoiceUser(string user)
+        {
+            Account account = await getToken();
+            Taxpayer taxpayer = new Taxpayer { Identifier = user };
+            AxaptaContainer ax = default;
+
+            /*Ax dönüş değerleri...*/
+            dt = new DataTable();
+            DataRow dr = dt.NewRow();
+            dt.Columns.Add("Id", typeof(int));
+            dt.Columns.Add("Response", typeof(bool));
+            dt.Columns.Add("ErrorMessage", typeof(string));
+            dt.Columns["Id"].AutoIncrement = true;
+            dt.Columns["Id"].AutoIncrementSeed = 1;
+            dt.Columns["Id"].AutoIncrementStep = 1;
+            /*Ax dönüş değerleri...*/
+            try
+            {
+                HttpClient client = new HttpClient();
+
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("applications/json"));
+                client.DefaultRequestHeaders.TryAddWithoutValidation("Content-Type", "application/json; charset=utf-16");
+                client.DefaultRequestHeaders.TryAddWithoutValidation("VbtAuthorization", account.Token);
+
+                var requestBody = JsonConvert.SerializeObject(taxpayer);
+                StringContent postBody = new StringContent(requestBody, Encoding.UTF8, "application/json");
+                var responseVBT = client.PostAsync(ConfigurationManager.AppSettings["URL_GetGibInvoiceUser"], postBody).Result;
+                string responseData = await responseVBT.Content.ReadAsStringAsync();
+
+                UserResponse response = JsonConvert.DeserializeObject<UserResponse>(responseData);
+                
+                if (response.Data == null)
+                {                                        
+                    dr["Response"] = false;
+                    dt.Rows.Add(dr);
+                }
+                else
+                {
+                    dr["Response"] = false;
+                    dt.Rows.Add(dr);
+                }
+            }
+            catch (Exception Ex)
+            {
+                dr["Response"]     = false;
+                dr["ErrorMessage"] = Ex.Message;
+                dt.Rows.Add(dr);
+            }
+        }
+       
+        
     }
 
     
