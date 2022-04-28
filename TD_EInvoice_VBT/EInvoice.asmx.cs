@@ -40,7 +40,7 @@ namespace TD_EInvoice_VBT
 
             
 
-            return "OK";
+            return "OssK";
         }
 
         [WebMethod]
