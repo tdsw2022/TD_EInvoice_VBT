@@ -110,6 +110,8 @@
     <Compile Include="Classes\Models\HazardousGoods.cs" />
     <Compile Include="Classes\Models\Id.cs" />
     <Compile Include="Classes\Models\IncomingInvoice.cs" />
+    <Compile Include="Classes\Models\IncomingInvoiceData.cs" />
+    <Compile Include="Classes\Models\IncomingInvoiceDataResponse.cs" />
     <Compile Include="Classes\Models\IncomingInvoiceQuery.cs" />
     <Compile Include="Classes\Models\IncomingInvoiceResponse.cs" />
     <Compile Include="Classes\Models\IncomingInvoiceResponseDetail.cs" />

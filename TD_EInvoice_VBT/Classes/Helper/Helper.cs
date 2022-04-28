@@ -89,7 +89,7 @@ namespace TD_EInvoice_VBT.Classes.Helper
 
                 List<Id> partyId = new List<Id>();
                 partyId.Add(new Id { SchemeId = "VKN", Value = (string)axConCustomer.get_Item(6) });
-
+                string asd = "TR";//(string)axConCustomer.get_Item(8);
                 Party customerParty = new Party
                 {
                     Id = 1,
@@ -98,7 +98,7 @@ namespace TD_EInvoice_VBT.Classes.Helper
                     PartyName = (string)axConCustomer.get_Item(2),
                     PostalAddress = new Address
                     {
-                        Id = null, Postbox = null, Room = null, BlockName = null, BuildingName = null, BuildingNumber = null, CitySubdivisionName = null, CityName = null, PostalZone = null, Region = null, District = null, Country = new Country { IdentificationCode = (string)axConCustomer.get_Item(8) },
+                        Id = null, Postbox = null, Room = null, BlockName = null, BuildingName = null, BuildingNumber = null, CitySubdivisionName = null, CityName = null, PostalZone = null, Region = null, District = null, Country = new Country { IdentificationCode = asd },//(string)axConCustomer.get_Item(8) }, İSO KODU PROBLEMİ
                         StreetName = (string)axConCustomer.get_Item(7)
                     },
                     Contact = new Contact
@@ -163,9 +163,10 @@ namespace TD_EInvoice_VBT.Classes.Helper
                 };
                 taxHeaderList.Add(taxHeader);
                 MonetaryTotal monetaryTotal = new MonetaryTotal { LineExtensionAmount = 1, TaxExclusiveAmount = 1, TaxInclusiveAmount = 1.18, AllowanceTotalAmount = 0, ChargeTotalAmount = 0, PayableAmount = 1.18 };
+
                 OutgoingInvoice invoiceHeader = new OutgoingInvoice
                 {
-                    LocationCode = (string)axConSalesInvoiceHeader.get_Item(34),
+                    //LocationCode = (string)axConSalesInvoiceHeader.get_Item(34),
                     //XsltFileName = "",
                     //FirmBranchCode = "",
                     //TryCountDescription = "",
@@ -187,7 +188,7 @@ namespace TD_EInvoice_VBT.Classes.Helper
                     InvoiceTypeCode = "SATIS", //// sorulacak
                     DocumentCurrencyCode = (string)axConSalesInvoiceHeader.get_Item(36),
                     CopyIndicator = false,
-                    IssueDate = Convert.ToDateTime(axConSalesInvoiceHeader.get_Item(8)).AddHours(1),
+                    IssueDate = DateTime.Now,//Convert.ToDateTime(axConSalesInvoiceHeader.get_Item(8)).AddHours(1),
                     LineCountNumeric = listInvoiceLine.Count,
                     Note = noteList,
                     //AccountingSupplierParty = null,
@@ -217,7 +218,7 @@ namespace TD_EInvoice_VBT.Classes.Helper
                     //PaymentMeans = null,
                     //PaymentTerms = null,
                     //TaxExchangeRate = null,
-                    PricingExchangeRate = new ExchangeRate { SourceCurrencyCode = (string)axConSalesInvoiceHeader.get_Item(36), TargetCurrencyCode = "TRY", CalculationRate = (double)axConSalesInvoiceHeader.get_Item(35), Date = Convert.ToDateTime(axConSalesInvoiceHeader.get_Item(4)) },
+                    PricingExchangeRate = new ExchangeRate { SourceCurrencyCode = (string)axConSalesInvoiceHeader.get_Item(36), TargetCurrencyCode = "TRY", CalculationRate = Math.Round((double)axConSalesInvoiceHeader.get_Item(35), 4), Date = Convert.ToDateTime(axConSalesInvoiceHeader.get_Item(4)) },
                     //PaymentExchangeRate = null,
                     //PaymentAlternativeExchangeRate = null,
                     InternetPayment = null,
@@ -234,7 +235,7 @@ namespace TD_EInvoice_VBT.Classes.Helper
                 var responseVBT = client.PostAsync(ConfigurationManager.AppSettings["URL_AddEInvoice"], postBody).Result;
                 string responseData = await responseVBT.Content.ReadAsStringAsync();
 
-                //AddOutgoingDespatchAdviceResponse adviceResponse = JsonConvert.DeserializeObject<AddOutgoingDespatchAdviceResponse>(responseData);
+                //OutgoingInvoice adviceResponse = JsonConvert.DeserializeObject<OutgoingInvoice>(responseData);
             }
             else
             {
@@ -249,6 +250,8 @@ namespace TD_EInvoice_VBT.Classes.Helper
         {
             try
             {
+                DateTime startDate = DateTime.Now; startDate = startDate.AddDays(-30);
+                DateTime endDate = startDate.AddDays(60);
                 HttpClient client = new HttpClient();
                 Account account = await getToken();
 
@@ -256,9 +259,10 @@ namespace TD_EInvoice_VBT.Classes.Helper
                 {
                     Query = new IncomingInvoiceQuery
                     {
-                        IssueDate = new DateRange { StartDate = DateTime.MinValue, EndDate = DateTime.MaxValue },
+                        IssueDate = new DateRange { StartDate = startDate, EndDate = endDate },
                         IsErpProcessed = false
                     },
+                    Take = 100
                 };
                 client.DefaultRequestHeaders.Accept.Clear();
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("applications/json"));
@@ -271,35 +275,32 @@ namespace TD_EInvoice_VBT.Classes.Helper
                 string responseData = await responseVBT.Content.ReadAsStringAsync();
 
                 IncomingInvoiceResponse response = JsonConvert.DeserializeObject<IncomingInvoiceResponse>(responseData);
-
-                if (response.ErrorCode != "")
-                    return response.Message;
-                else
-                    return "Aktarım tamamlandı";
+                //List<IncomingInvoiceDataResponse> dataResponse = 
+                /*List<IncomingInvoiceDataResponse> response = dataResponse.Data.Results;
+                if (!String.IsNullOrEmpty(dataResponse.ErrorCode))
+                    return dataResponse.Message;
+                if(dataResponse.Data.Total > 0)
+                {
+                    foreach(IncomingInvoiceResponse resp in response)
+                    {
+                        
+                    }
+                }
+                return $"Toplamda {dataResponse.Data.Total} kayıt aktarıldı...";*/
             }
-            catch
+            catch(Exception Ex)
             {
-
+                
             }
-            return "Aktarım tamamlanmadı";
+            return "Tüm kayıtlar aktarılmış...";
         }
 
-        public async void CheckGibInvoiceUser(string user)
+        public async Task CheckGibInvoiceUser(string user)
         {
             Account account = await getToken();
             Taxpayer taxpayer = new Taxpayer { Identifier = user };
             AxaptaContainer ax = default;
 
-            /*Ax dönüş değerleri...*/
-            dt = new DataTable();
-            DataRow dr = dt.NewRow();
-            dt.Columns.Add("Id", typeof(int));
-            dt.Columns.Add("Response", typeof(bool));
-            dt.Columns.Add("ErrorMessage", typeof(string));
-            dt.Columns["Id"].AutoIncrement = true;
-            dt.Columns["Id"].AutoIncrementSeed = 1;
-            dt.Columns["Id"].AutoIncrementStep = 1;
-            /*Ax dönüş değerleri...*/
             try
             {
                 HttpClient client = new HttpClient();
@@ -317,21 +318,14 @@ namespace TD_EInvoice_VBT.Classes.Helper
                 UserResponse response = JsonConvert.DeserializeObject<UserResponse>(responseData);
                 
                 if (response.Data == null)
-                {                                        
-                    dr["Response"] = false;
-                    dt.Rows.Add(dr);
+                {                    
                 }
                 else
                 {
-                    dr["Response"] = false;
-                    dt.Rows.Add(dr);
                 }
             }
             catch (Exception Ex)
             {
-                dr["Response"]     = false;
-                dr["ErrorMessage"] = Ex.Message;
-                dt.Rows.Add(dr);
             }
         }
        

@@ -7,7 +7,7 @@ namespace TD_EInvoice_VBT.Classes.Models
 {
     public class OutgoingInvoice
     {
-        public string LocationCode { get; set; }
+        //public string LocationCode { get; set; }
         public string XsltFileName { get; set; }
         public string FirmBranchCode { get; set; }
         public string TryCountDescription { get; set; }
