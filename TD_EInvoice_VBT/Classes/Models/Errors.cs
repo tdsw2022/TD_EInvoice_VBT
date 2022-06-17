@@ -5,8 +5,9 @@ using System.Web;
 
 namespace TD_EInvoice_VBT.Classes.Models
 {
-    public class CustomerParty
+    public class Errors
     {
-        public Party Party { get; set; }        
+        public string ErrorCode { get; set; }
+        public string ErrorMessage { get; set; }
     }
 }

@@ -7,7 +7,7 @@ namespace TD_EInvoice_VBT.Classes.Models
 {
     public class Party
     {
-        public Int32 Id { get; set; }
+        public Int64 Id { get; set; }
         public string PartyExternalId { get; set; }
         public string WebsiteURI { get; set; }
         public List<Id> PartyIdentifications { get; set; }

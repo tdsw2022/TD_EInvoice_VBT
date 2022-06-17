@@ -5,8 +5,9 @@ using System.Web;
 
 namespace TD_EInvoice_VBT.Classes.Models
 {
-    public class CustomerParty
+    public class OutgoingInvoiceResponse
     {
-        public Party Party { get; set; }        
+        public string RefreshToken { get; set; }
+        public Data Data { get; set; }
     }
 }

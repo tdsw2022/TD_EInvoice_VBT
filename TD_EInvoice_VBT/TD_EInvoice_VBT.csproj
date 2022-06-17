@@ -52,6 +52,7 @@
       <HintPath>..\packages\Newtonsoft.Json.13.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System.Net.Http" />
+    <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Web.DynamicData" />
     <Reference Include="System.Web.Entity" />
     <Reference Include="System.Web.ApplicationServices" />
@@ -79,6 +80,7 @@
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Classes\Helper\Engine.cs" />
     <Compile Include="Classes\Helper\Helper.cs" />
     <Compile Include="Classes\Models\Account.cs" />
     <Compile Include="Classes\Models\Address.cs" />
@@ -97,6 +99,7 @@
     <Compile Include="Classes\Models\Country.cs" />
     <Compile Include="Classes\Models\CustomerParty.cs" />
     <Compile Include="Classes\Models\CustomsDeclaration.cs" />
+    <Compile Include="Classes\Models\Data.cs" />
     <Compile Include="Classes\Models\DateRange.cs" />
     <Compile Include="Classes\Models\Delivery.cs" />
     <Compile Include="Classes\Models\DeliveryTerms.cs" />
@@ -104,6 +107,7 @@
     <Compile Include="Classes\Models\Dimension.cs" />
     <Compile Include="Classes\Models\DocumentReference.cs" />
     <Compile Include="Classes\Models\DocumentResponse.cs" />
+    <Compile Include="Classes\Models\Errors.cs" />
     <Compile Include="Classes\Models\ExchangeRate.cs" />
     <Compile Include="Classes\Models\FinancialAccount.cs" />
     <Compile Include="Classes\Models\GoodsItem.cs" />
@@ -131,6 +135,7 @@
     <Compile Include="Classes\Models\OrderLineReference.cs" />
     <Compile Include="Classes\Models\OrderReference.cs" />
     <Compile Include="Classes\Models\OutgoingInvoice.cs" />
+    <Compile Include="Classes\Models\OutgoingInvoiceResponse.cs" />
     <Compile Include="Classes\Models\Package.cs" />
     <Compile Include="Classes\Models\Party.cs" />
     <Compile Include="Classes\Models\PartyLegalEntity.cs" />

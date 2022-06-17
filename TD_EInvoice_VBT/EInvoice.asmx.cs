@@ -30,33 +30,70 @@ namespace TD_EInvoice_VBT
         [WebMethod]
         public string AddEInvoice(Int64 axRecId, Int16 eInvoiceType)
         {
+            Helper helper = new Helper();
+            if (String.IsNullOrEmpty(helper.account.Token))
+                return "Token alınamadı!";
             //axRecId = 5637589351;
             axRecId = 5637543825;
             //axRecId = 5637591075;
             eInvoiceType = 1;
-            Helper     helper = new Helper();
-            HttpClient client = new HttpClient();
-            var a = helper.initEInvoiceSalesData(axRecId, eInvoiceType);
-
             
+            string respMessage = helper.initEInvoiceSalesData(axRecId, eInvoiceType);
 
-            return "OssK";
+            return respMessage;
         }
 
         [WebMethod]
-        public void GetIncomingEInvoice()
-        {
-            new Helper().incomingEInvoice();
-        }
-
-        [WebMethod]
-        public DataTable CheckGibInvoiceUser(string user)
-        {
-            DataTable userDt;
+        public string DeleteEInvoice(string Ettn)
+        {             
             Helper helper = new Helper();
+            if (String.IsNullOrEmpty(helper.account.Token))
+                return "Token alınamadı!";
+
+            string resp = helper.deleteOutgoingEInvoice(Ettn);
+
+            return resp;
+        }
+
+        [WebMethod]
+        public dynamic GetIncomingEInvoice()
+        {
+            Helper helper = new Helper();
+            if (String.IsNullOrEmpty(helper.account.Token))
+                return "Token alınamadı!";
+            helper.incomingEInvoice();
+            return "";
+        }
+
+        [WebMethod]
+        public string CheckGibInvoiceUser(string user)
+        {
+            Helper helper = new Helper();
+            if (String.IsNullOrEmpty(helper.account.Token))
+                return "Token alınamadı!";
             helper.CheckGibInvoiceUser(user);
-            userDt = helper.dt;
-            return userDt;
+            //userDt = helper.dt;
+            return "";
+        }
+
+        [WebMethod]
+        public string getEInvoicePDF(string ettn)
+        {
+            Helper helper = new Helper();
+            if (String.IsNullOrEmpty(helper.account.Token))
+                return "Token alınamadı!";
+            string URL = helper.getEInvoicePDFUrl(ettn);
+            return URL;
+        }
+
+        [WebMethod]
+        public string getEInvoiceStatus(string ettn)
+        {
+            Helper helper = new Helper();
+            if (String.IsNullOrEmpty(helper.account.Token))
+                return "Token alınamadı!";
+            string response = helper.getEInvoiceStatus(ettn);
+            return response;
         }
     }
 }

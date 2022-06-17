@@ -16,41 +16,64 @@ namespace TD_EInvoice_VBT.Classes.Helper
 {
     public class Helper
     {
-        public DataTable dt;
-        
-        public async Task<Account> getToken()
+
+        public Account account;
+        Axapta axapta;
+        Engine engine;
+        public Helper()
         {
-            Account account = new Account { Email = ConfigurationManager.AppSettings["UserId"], Password = ConfigurationManager.AppSettings["Password"] };
-            try
-            {
-                HttpClient client = new HttpClient();
+            engine = new Engine();
+            getToken();
+            AxaptaConnection();
+        }
+        //Token için yazılmıştır...
+        private async Task<string> postWithoutAuth(string url, string userJsonData)
+        {
+            HttpClient client = new HttpClient();
 
-                string userJsonData = JsonConvert.SerializeObject(account);
-                var convertHttpContent = new StringContent(userJsonData, Encoding.UTF8, "application/json");
-
-                var responseVBT = client.PostAsync(ConfigurationManager.AppSettings["URL_Account"], convertHttpContent).Result;
-
-                string responseToken = await responseVBT.Content.ReadAsStringAsync();
-
-                account = JsonConvert.DeserializeObject<Account>(responseToken);
-                account.Message = "";
-            }
-            catch (Exception Ex)
-            {
-                account.Message = Ex.Message;
-                return account;
-            }
-            return account;
+            var convertHttpContent = new StringContent(userJsonData, Encoding.UTF8, "application/json");
+            var responseVBT = client.PostAsync(url, convertHttpContent).Result;
+            string responseToken = await responseVBT.Content.ReadAsStringAsync();
+            return responseToken;
+        }
+        //Gelen tokeni ekleyerek post ediyoruz...
+        private async Task<string> postWithAuth(string url, string userJsonData)
+        {
+            HttpClient client = new HttpClient();
+            client.DefaultRequestHeaders.Accept.Clear();
+            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("applications/json"));
+            client.DefaultRequestHeaders.TryAddWithoutValidation("Content-Type", "application/json; charset=utf-16");
+            client.DefaultRequestHeaders.TryAddWithoutValidation("VbtAuthorization", account.Token);
+            StringContent postBody = new StringContent(userJsonData, Encoding.UTF8, "application/json");
+            var responseVBT = client.PostAsync(url, postBody).Result;
+            string responseData = await responseVBT.Content.ReadAsStringAsync();
+            return responseData;
         }
 
-        public Axapta AxaptaConnection()
+        //Güvenlik için token alıyoruz...
+        public void getToken()
         {
-            Axapta result = default;
             try
             {
-                result = new Axapta();
+                account = new Account { Email = ConfigurationManager.AppSettings["UserId"], Password = ConfigurationManager.AppSettings["Password"] };
+                string requestJson = JsonConvert.SerializeObject(account);
+                string responseJson = postWithoutAuth(ConfigurationManager.AppSettings["URL_Account"], requestJson).Result;
+                account = JsonConvert.DeserializeObject<Account>(responseJson);
+                account.Message = "";
+            }
+            catch (Exception ex)
+            {
+                new Engine().SendMail($"GetToken - {ex.Message}");
+            }
+        }
 
-                result.LogonAs(ConfigurationManager.AppSettings["AxUserName"],
+        public void AxaptaConnection()
+        {
+            try
+            {
+                axapta = new Axapta();
+
+                axapta.LogonAs(ConfigurationManager.AppSettings["AxUserName"],
                                ConfigurationManager.AppSettings["AxDomain"],
                                new System.Net.NetworkCredential(ConfigurationManager.AppSettings["AxUserName"],
                                                                 ConfigurationManager.AppSettings["AxPassword"],
@@ -60,21 +83,20 @@ namespace TD_EInvoice_VBT.Classes.Helper
                                ConfigurationManager.AppSettings["AxServer"] + ":" + ConfigurationManager.AppSettings["AxPort"],
                                null);
             }
-            catch
+            catch (Exception ex)
             {
-                return null;
+                errorMessage = "Axapta bağlantısı kurulamadı!";
+                new Engine().SendMail($"AxaptaConnection - {ex.Message}");
             }
-            return result;
         }
 
-        public async Task<string> initEInvoiceSalesData(Int64 axRecId, Int16 eInvoiceType)
+        public  string initEInvoiceSalesData(Int64 axRecId, Int16 eInvoiceType)
         {
-            Axapta axapta = AxaptaConnection();
-            Account account = await getToken();
             if (account.Message != "")
                 return "VBT Token bilgileri getirilemedi!";
             if (axapta == null)
                 return "Axapta Bağlantısı Kurulamadı!";
+            
             AxaptaContainer axConSalesInvoiceRecords = axapta.CallStaticClassMethod("aaEInvoice", "sendSalesInvoiceRecords", axRecId, eInvoiceType) as AxaptaContainer;
             List<string> noteList = new List<string>();
             noteList.Add("test");
@@ -87,40 +109,70 @@ namespace TD_EInvoice_VBT.Classes.Helper
                 AxaptaContainer axConSalesInvoiceLines = axConSalesInvoiceRecords.get_Item(4) as AxaptaContainer;
                 AxaptaContainer axConSalesInvoiceTaxesLines = axConSalesInvoiceRecords.get_Item(5) as AxaptaContainer;
 
-                List<Id> partyId = new List<Id>();
-                partyId.Add(new Id { SchemeId = "VKN", Value = (string)axConCustomer.get_Item(6) });
-                string asd = "TR";//(string)axConCustomer.get_Item(8);
-                Party customerParty = new Party
+                #region Customer
+                List<Id> partyId = new List<Id>()
                 {
-                    Id = 1,
-                    WebsiteURI = (string)axConCustomer.get_Item(12),
-                    PartyIdentifications = partyId,
-                    PartyName = (string)axConCustomer.get_Item(2),
-                    PostalAddress = new Address
-                    {
-                        Id = null, Postbox = null, Room = null, BlockName = null, BuildingName = null, BuildingNumber = null, CitySubdivisionName = null, CityName = null, PostalZone = null, Region = null, District = null, Country = new Country { IdentificationCode = asd },//(string)axConCustomer.get_Item(8) }, İSO KODU PROBLEMİ
-                        StreetName = (string)axConCustomer.get_Item(7)
-                    },
-                    Contact = new Contact
-                    {
-                        Id = null, Name = null, Telephone = (string)axConCustomer.get_Item(10), Telefax = (string)axConCustomer.get_Item(11), ElectronicMail = null, Note = null, OtherCommunication = null
-                    },
-                    PartyTaxScheme = null,
-                    Person = null,
-                    EndpointId = "",
-                    IndustryClassificationCode = "",
-                    PhysicalLocation = null,
-                    PartyLegalEntity = null,
-                    AgentParty = null,
-                    OpenningBalanceDate = default,
-                    OpenningBalance = 0,
-                    CategoryId = 0,
-                    IdentityOrTaxNumber = "11111111111",
-                    LegalOrPerson = "G",
-                    EArchiveMailTo = ""
+                    new Id { SchemeId = axConCustomer.get_Item(6).ToString().Length == 11 ? "TCKNs" : "VKN", Value = (string)axConCustomer.get_Item(6) } // Müşteri VKN/TCKN CustTable.VATNum
                 };
-                CustomerParty customer = new CustomerParty { Party = customerParty, DeliveryContact = null };
-                List<InvoiceLine> listInvoiceLine = new List<InvoiceLine>();
+
+                Address postalAddress = new Address {
+                    StreetName = (string)axConCustomer.get_Item(7), // CustTable.Street
+                    BuildingNumber = string.Empty, // Boş
+                    CitySubdivisionName = (string)axConCustomer.get_Item(8), // AddressCounty.aaEInvoiceRecId
+                    PostalZone = (string)axConCustomer.get_Item(9), // CustTable.ZipCode
+                    Country = new Country { IdentificationCode = (string)axConCustomer.get_Item(16) } // AddressCountryRegion.ISOCode
+                };
+
+                Contact contact = new Contact {
+                    Telephone = (string)axConCustomer.get_Item(10), // CustTable.Phone
+                    Telefax = (string)axConCustomer.get_Item(11), // CustTable.TeleFax
+                    ElectronicMail = string.Empty // Boş                                       
+                };
+
+                PartyTaxScheme partyTaxScheme = new PartyTaxScheme
+                {
+                    RegistrationName = (string)axConCustomer.get_Item(13), // Ihracat veya Yolcu beraber fatura durumu ? CustTable.Name : Boş
+                    TaxScheme = new TaxScheme { Name = (string)axConCustomer.get_Item(4) }  // CustTable.TaxOfficeName
+                };
+
+                Party customerParty = new Party {
+                    Id = Convert.ToInt64(axConCustomer.get_Item(15)), //CustTable.RecId
+                    PartyIdentifications = partyId,
+                    PartyName = (string)axConCustomer.get_Item(2), // CustTable.Name                    
+                    PostalAddress = postalAddress,
+                    Contact = contact,
+                    PartyTaxScheme = partyTaxScheme,
+                    WebsiteURI = (string)axConCustomer.get_Item(12) // CustTable.URL
+                };
+               
+                CustomerParty customer = new CustomerParty { Party = customerParty }; //Müşteri objesini burada en son topluyoruz...
+                #endregion
+
+
+                #region InvoiceLine
+                for (int lines = 1; lines <= axConSalesInvoiceLines.Count; lines++)
+                {
+                    AxaptaContainer salesLines = (AxaptaContainer)axConSalesInvoiceLines.get_Item(lines);
+                    List<InvoiceLine> listInvoiceLine = new List<InvoiceLine>();                    
+                    
+                    Quantity InvoicedQuantity = new Quantity
+                    {
+                        Value = (double)salesLines.get_Item(6), // custInvoiceTrans.Qty veya custInvoiceTrans.QtyForFreeText
+                        Unitcode = "NIU" //E-Faturada Adet'e karşılık gelen tanım
+                    };
+
+                    InvoiceLine invoiceLine = new InvoiceLine {
+                        InvoicedQuantity = InvoicedQuantity,
+                        Item = new Item { Name = (string)salesLines.get_Item(5) }, // Ax'ta karşılığı itemName todo kontrol edilecek itemName veya itemId gönderilecek testlerde belli olur.
+                        Price = (double)salesLines.get_Item(7), // custInvoiceTrans.SalesPriceForFreeText >0 ? custInvoiceTrans.SalesPriceForFreeText :custInvoiceTrans.SalesPrice
+                        
+                    };
+                    listInvoiceLine.Add(invoiceLine);
+                }
+                #endregion
+
+
+                /*List<InvoiceLine> listInvoiceLine = new List<InvoiceLine>();
                 List<TaxSubtotal> taxsubTotal = new List<TaxSubtotal>();
                 for (int axCon = 1; axCon <= axConSalesInvoiceLines.Count; axCon++)
                 {
@@ -160,7 +212,7 @@ namespace TD_EInvoice_VBT.Classes.Helper
                 TaxTotal taxHeader = new TaxTotal {
                     TaxAmount = (double)axConSalesInvoiceHeader.get_Item(26),
                     TaxSubtotal = taxsubTotal
-                };
+                };*/
                 taxHeaderList.Add(taxHeader);
                 MonetaryTotal monetaryTotal = new MonetaryTotal { LineExtensionAmount = 1, TaxExclusiveAmount = 1, TaxInclusiveAmount = 1.18, AllowanceTotalAmount = 0, ChargeTotalAmount = 0, PayableAmount = 1.18 };
 
@@ -183,7 +235,7 @@ namespace TD_EInvoice_VBT.Classes.Helper
                     //Id = 0,
                     InvoiceExternalId = (string)axConSalesInvoiceHeader.get_Item(1),
                     //InvoiceNumber = "",
-                    ProfileId = "TEMELFATURA",//"TICARIFATURA",//"TEMELFATURA", //// sorulacak
+                    ProfileId = engine.profileID(Convert.ToInt16(axConCustomer.get_Item(3))),
                     //UUId = "",
                     InvoiceTypeCode = "SATIS", //// sorulacak
                     DocumentCurrencyCode = (string)axConSalesInvoiceHeader.get_Item(36),
@@ -224,36 +276,32 @@ namespace TD_EInvoice_VBT.Classes.Helper
                     InternetPayment = null,
                     //DatePosted = DateTime.Now
                 };
-                HttpClient client = new HttpClient();
-                client.DefaultRequestHeaders.Accept.Clear();
-                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("applications/json"));
-                client.DefaultRequestHeaders.TryAddWithoutValidation("Content-Type", "application/json; charset=utf-16");
-                client.DefaultRequestHeaders.TryAddWithoutValidation("VbtAuthorization", account.Token);
 
-                var requestBody = JsonConvert.SerializeObject(invoiceHeader);
-                StringContent postBody = new StringContent(requestBody, Encoding.UTF8, "application/json");
-                var responseVBT = client.PostAsync(ConfigurationManager.AppSettings["URL_AddEInvoice"], postBody).Result;
-                string responseData = await responseVBT.Content.ReadAsStringAsync();
+                axapta.Logoff();
 
-                //OutgoingInvoice adviceResponse = JsonConvert.DeserializeObject<OutgoingInvoice>(responseData);
+                var requestJson = JsonConvert.SerializeObject(invoiceHeader);
+                string responseJson = postWithAuth(ConfigurationManager.AppSettings["URL_AddEInvoice"], requestJson).Result;
+                OutgoingInvoiceResponse response = JsonConvert.DeserializeObject<OutgoingInvoiceResponse>(responseJson);
+                if (response.Data.HasError)
+                    return response.Data.Errors.Min().ErrorMessage.ToString();
+
+                return response.Data.InvoiceNumber + "numaralı fatura E-Fatura sistemine eklenmiştir.";
             }
             else
             {
                 return "Fatura kayıt numaralı bilgiler eksik veya bulunamadı. (SendSalesInvoiceRecords)" + "- axConSalesInvoiceRecords = " + axConSalesInvoiceRecords.Count;
             }
 
-            axapta.Logoff();
-            return "";
+            
         }
 
-        public async Task<string> incomingEInvoice()
+        //Gelen E-Fatura
+        public string incomingEInvoice()
         {
             try
             {
                 DateTime startDate = DateTime.Now; startDate = startDate.AddDays(-30);
                 DateTime endDate = startDate.AddDays(60);
-                HttpClient client = new HttpClient();
-                Account account = await getToken();
 
                 IncomingInvoice incomingEInvoice = new IncomingInvoice
                 {
@@ -264,20 +312,15 @@ namespace TD_EInvoice_VBT.Classes.Helper
                     },
                     Take = 100
                 };
-                client.DefaultRequestHeaders.Accept.Clear();
-                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("applications/json"));
-                client.DefaultRequestHeaders.TryAddWithoutValidation("Content-Type", "application/json; charset=utf-16");
-                client.DefaultRequestHeaders.TryAddWithoutValidation("VbtAuthorization", account.Token);
 
-                var requestBody = JsonConvert.SerializeObject(incomingEInvoice);
-                StringContent postBody = new StringContent(requestBody, Encoding.UTF8, "application/json");
-                var responseVBT = client.PostAsync(ConfigurationManager.AppSettings["URL_GetIncomingEInvoice"], postBody).Result;
-                string responseData = await responseVBT.Content.ReadAsStringAsync();
-
-                IncomingInvoiceResponse response = JsonConvert.DeserializeObject<IncomingInvoiceResponse>(responseData);
+                string requestJson = JsonConvert.SerializeObject(incomingEInvoice);
+                string responseJson = postWithAuth(ConfigurationManager.AppSettings["URL_GetIncomingEInvoice"], requestJson).Result;
+                IncomingInvoiceResponse response = JsonConvert.DeserializeObject<IncomingInvoiceResponse>(responseJson);
+                if (String.IsNullOrEmpty(response.RefreshToken))
+                    return response.Message;
                 //List<IncomingInvoiceDataResponse> dataResponse = 
-                /*List<IncomingInvoiceDataResponse> response = dataResponse.Data.Results;
-                if (!String.IsNullOrEmpty(dataResponse.ErrorCode))
+                List<IncomingInvoiceResponseDetail> res = response.Data.Results;
+                /*if (!String.IsNullOrEmpty(dataResponse.ErrorCode))
                     return dataResponse.Message;
                 if(dataResponse.Data.Total > 0)
                 {
@@ -285,52 +328,112 @@ namespace TD_EInvoice_VBT.Classes.Helper
                     {
                         
                     }
-                }
-                return $"Toplamda {dataResponse.Data.Total} kayıt aktarıldı...";*/
+                }*/
+                //return $"Toplamda {dataResponse.Data.Total} kayıt aktarıldı...";*/
             }
-            catch(Exception Ex)
+            catch (Exception Ex)
             {
-                
+
             }
             return "Tüm kayıtlar aktarılmış...";
         }
 
-        public async Task CheckGibInvoiceUser(string user)
+        //E-Fatura iptal
+        public string deleteOutgoingEInvoice(string _ettn)
         {
-            Account account = await getToken();
-            Taxpayer taxpayer = new Taxpayer { Identifier = user };
-            AxaptaContainer ax = default;
+            var deleteOutgoingEInvoiceRequest = new { Ettn = _ettn };
+            var deleteOutgoingEInvoiceResponse = new { refreshToken = string.Empty, Data = false, Message = string.Empty };
+            try
+            {
+                string requestJson = JsonConvert.SerializeObject(deleteOutgoingEInvoiceRequest);
+                string responseJson = postWithAuth(ConfigurationManager.AppSettings["URL_DeleteEInvoice"], requestJson).Result;
+                deleteOutgoingEInvoiceResponse = JsonConvert.DeserializeAnonymousType(responseJson, deleteOutgoingEInvoiceResponse);
+            }
+            catch (Exception ex)
+            {                
+                new Engine().SendMail($"deleteOutgoingEInvoice - {ex.Message}");
+                return "E-Fatura iptal işlemi gerçekleştirilemedi!";
+            }
+
+            if (deleteOutgoingEInvoiceResponse.Data) // Başarılı bir şekilde iptal edildi mi kontrol ediliyor.
+                return "E-Fatura iptal edilmiştir";
+            return deleteOutgoingEInvoiceResponse.Message; //Fatura iptal edilemediyse dönen mesajı axaptaya dönüyoruz.
+        }
+
+        //E-Fatura PDF
+        public string getEInvoicePDFUrl(string _ettn)
+        {
+            List<String> listEttn = new List<string> { _ettn };
+            var pdfRequest = new { Ettns = listEttn };
+            var PdfList = new[] { new { DownloadUrl = String.Empty } }.ToList();
+            var data = new { PdfList = PdfList };
+            var pdfResponse = new { Data = data };
 
             try
             {
-                HttpClient client = new HttpClient();
+                string requestJson = JsonConvert.SerializeObject(pdfRequest);
+                string responseJson = postWithAuth(ConfigurationManager.AppSettings["URL_GetEInvoicePDF"], requestJson).Result;
+                pdfResponse = JsonConvert.DeserializeAnonymousType(responseJson, pdfResponse);
+            }
+            catch (Exception ex)
+            {
+                errorMessage = "PDF indirilemedi!";
+                new Engine().SendMail($"getEInvoicePDFUrl - {ex.Message}");
+                return errorMessage;
+            }
+            return pdfResponse.Data.PdfList[0].DownloadUrl;
+        }
 
-                client.DefaultRequestHeaders.Accept.Clear();
-                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("applications/json"));
-                client.DefaultRequestHeaders.TryAddWithoutValidation("Content-Type", "application/json; charset=utf-16");
-                client.DefaultRequestHeaders.TryAddWithoutValidation("VbtAuthorization", account.Token);
+        //Giden E-Fatura Statü bilgisini döner
+        public string getEInvoiceStatus(string _ettn)
+        {
+            List<String> listEttn = new List<string> { _ettn };
+            var pdfRequest = new { EttnList = listEttn };
+            var InvoiceStatusList = new[] { new { OutgoingInvoiceStatus = String.Empty } }.ToList();
+            var data = new { InvoiceStatusList = InvoiceStatusList };
+            var pdfResponse = new { Data = data };
 
-                var requestBody = JsonConvert.SerializeObject(taxpayer);
-                StringContent postBody = new StringContent(requestBody, Encoding.UTF8, "application/json");
-                var responseVBT = client.PostAsync(ConfigurationManager.AppSettings["URL_GetGibInvoiceUser"], postBody).Result;
-                string responseData = await responseVBT.Content.ReadAsStringAsync();
+            try
+            {
+                string requestJson = JsonConvert.SerializeObject(pdfRequest);
+                string responseJson = postWithAuth(ConfigurationManager.AppSettings["URL_GetEInvoiceStatus"], requestJson).Result;
+                pdfResponse = JsonConvert.DeserializeAnonymousType(responseJson, pdfResponse);
+            }
+            catch (Exception ex)
+            {
+                errorMessage = "E-Fatura Statüsünde hata!";
+                new Engine().SendMail($"getEInvoiceStatus - {ex.Message}");
+                return errorMessage;
+            }
 
-                UserResponse response = JsonConvert.DeserializeObject<UserResponse>(responseData);
-                
+            return new Engine().OutgoingInvoiceStatusForUser(pdfResponse.Data.InvoiceStatusList[0].OutgoingInvoiceStatus);
+        }
+
+        //Mükellef sorgulama
+        public DataTable CheckGibInvoiceUser(string user)
+        {
+            Taxpayer taxpayer = new Taxpayer { Identifier = user };
+            DataTable userResponseDt = new DataTable();
+            try
+            {
+                string requestJson = JsonConvert.SerializeObject(taxpayer);
+                string responseJson = postWithAuth(ConfigurationManager.AppSettings["URL_GetGibInvoiceUser"], requestJson).Result;
+                UserResponse response = JsonConvert.DeserializeObject<UserResponse>(responseJson);
+                /*userResponseDt.Columns.Add()
                 if (response.Data == null)
                 {                    
                 }
                 else
                 {
-                }
+                }*/
             }
-            catch (Exception Ex)
+            catch (Exception ex)
             {
+                new Engine().SendMail($"CheckGibInvoiceUser - {ex.Message}");
             }
+            return userResponseDt;
         }
-       
-        
-    }
 
-    
-}
+
+    }
+}   
