@@ -28,17 +28,28 @@ namespace TD_EInvoice_VBT
 
 
         [WebMethod]
-        public string AddEInvoice(Int64 axRecId, Int16 eInvoiceType)
+        public string AddEInvoice(string parametre)
         {
+            Int16 eInvoiceType = 0;
+            Int64 axRecId = 0;
+            if (parametre.Length == 12)
+            {
+                axRecId = Convert.ToInt64(parametre.Remove(parametre.Length - 2, 2));
+                eInvoiceType = Convert.ToInt16(parametre.Remove(0, parametre.Length - 1));
+            }
+            else if (parametre.Length == 13)
+            {
+                axRecId = Convert.ToInt64(parametre.Remove(parametre.Length - 3, 3));
+                eInvoiceType = Convert.ToInt16(parametre.Remove(0, parametre.Length - 2));
+            }
             Helper helper = new Helper();
+
             if (String.IsNullOrEmpty(helper.account.Token))
-                return "Token alınamadı!";
-            //axRecId = 5637589351;
-            axRecId = 5637543825;
-            //axRecId = 5637591075;
-            eInvoiceType = 1;
+                return "VBT Token bilgileri getirilemedi!";
+            if (helper.axapta == null)
+                return "Axapta Bağlantısı Kurulamadı!";
             
-            string respMessage = helper.initEInvoiceSalesData(axRecId, eInvoiceType);
+            string respMessage = helper.sendEInvoice(axRecId, eInvoiceType);
 
             return respMessage;
         }
@@ -47,8 +58,11 @@ namespace TD_EInvoice_VBT
         public string DeleteEInvoice(string Ettn)
         {             
             Helper helper = new Helper();
+
             if (String.IsNullOrEmpty(helper.account.Token))
-                return "Token alınamadı!";
+                return "VBT Token bilgileri getirilemedi!";
+            if (helper.axapta == null)
+                return "Axapta Bağlantısı Kurulamadı!";
 
             string resp = helper.deleteOutgoingEInvoice(Ettn);
 
@@ -66,22 +80,28 @@ namespace TD_EInvoice_VBT
         }
 
         [WebMethod]
-        public string CheckGibInvoiceUser(string user)
+        public string CheckGibInvoiceUser(string vkn)
         {
             Helper helper = new Helper();
+
             if (String.IsNullOrEmpty(helper.account.Token))
-                return "Token alınamadı!";
-            helper.CheckGibInvoiceUser(user);
-            //userDt = helper.dt;
-            return "";
+                return "VBT Token bilgileri getirilemedi!";
+            if (helper.axapta == null)
+                return "Axapta Bağlantısı Kurulamadı!";
+
+            string response = helper.CheckGibInvoiceUser(vkn);
+
+            return response;
         }
 
         [WebMethod]
         public string getEInvoicePDF(string ettn)
         {
             Helper helper = new Helper();
+
             if (String.IsNullOrEmpty(helper.account.Token))
                 return "Token alınamadı!";
+
             string URL = helper.getEInvoicePDFUrl(ettn);
             return URL;
         }
@@ -90,8 +110,10 @@ namespace TD_EInvoice_VBT
         public string getEInvoiceStatus(string ettn)
         {
             Helper helper = new Helper();
+
             if (String.IsNullOrEmpty(helper.account.Token))
-                return "Token alınamadı!";
+                return "VBT Token bilgileri getirilemedi!";
+
             string response = helper.getEInvoiceStatus(ettn);
             return response;
         }

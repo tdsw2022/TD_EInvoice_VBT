@@ -22,10 +22,10 @@ namespace TD_EInvoice_VBT.Classes.Models
         public double DeclaredStatisticsValueAmount { get; set; }
         public double FreeOnBoardValueAmount { get; set; }
         public string SpecialInstructions { get; set; }
-        public GoodsItem GoodsItem { get; set; }
-        public ShipmentStage ShipmentStage { get; set; }
+        public List<GoodsItem> GoodsItem { get; set; }
+        public List<ShipmentStage>ShipmentStage { get; set; }
         public Delivery Delivery { get; set; }
-        public TransportHandlingUnit TransportHandlingUnit { get; set; }
+        public List<TransportHandlingUnit> TransportHandlingUnit { get; set; }
         public Address ReturnAddress { get; set; }
         public Location FirstArrivalPortLocation { get; set; }
         public Location LastExitPortLocation { get; set; }

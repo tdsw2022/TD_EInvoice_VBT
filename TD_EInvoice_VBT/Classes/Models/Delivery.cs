@@ -20,7 +20,7 @@ namespace TD_EInvoice_VBT.Classes.Models
         public Party CarrierParty { get; set; }
         public Party DeliveryParty { get; set; }
         public Despatch Despatch { get; set; }
-        public DeliveryTerms DeliveryTerms { get; set; }
+        public List<DeliveryTerms> DeliveryTerms { get; set; }
         public Shipment Shipment { get; set; }
     }
 }

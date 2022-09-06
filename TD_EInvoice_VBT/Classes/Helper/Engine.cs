@@ -55,5 +55,24 @@ namespace TD_EInvoice_VBT.Classes.Helper
                 default: return "EARSIVFATURA"; //Ax'da karşılığı yok
             }
         }
+
+        public string invoiceTypeCode(int enumValue)
+        {
+            switch (enumValue)
+            {
+                case 1: return "SATIS"; 
+                case 2: return "IADE"; 
+                case 5: return "TEVKIFAT"; 
+                case 6: return "ISTISNA"; 
+                case 8: return "OZELMATRAH";
+                default: return ""; 
+            }
+        }
+
+        public double convertDouble(object value)
+        {
+            double _value = Math.Round((double)value,2);
+            return _value;
+        }
     }
 }

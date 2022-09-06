@@ -16,7 +16,7 @@ namespace TD_EInvoice_VBT.Classes.Models
         public Quantity TotalPackageQuantity { get; set; }
         public string DamageRemarks { get; set; }
         public string TraceId { get; set; }
-        public Package ActualPackage { get; set; }
+        public List<Package> ActualPackage { get; set; }
         public TransportEquipment TransportEquipment { get; set; }
         public TransportMeans TransportMeans { get; set; }
         public HazardousGoods HazardousGoodsTransit { get; set; }

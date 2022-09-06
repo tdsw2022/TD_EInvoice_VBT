@@ -88,6 +88,7 @@
     <Compile Include="Classes\Models\AliasResponse.cs" />
     <Compile Include="Classes\Models\AllowanceCharge.cs" />
     <Compile Include="Classes\Models\Attachment.cs" />
+    <Compile Include="Classes\Models\AxaptaTaxLines.cs" />
     <Compile Include="Classes\Models\Barcode.cs" />
     <Compile Include="Classes\Models\BillingReference.cs" />
     <Compile Include="Classes\Models\BillingReferenceLine.cs" />
@@ -177,7 +178,9 @@
       <DependentUpon>Web.config</DependentUpon>
     </None>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <WCFMetadata Include="Connected Services\" />
+  </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
